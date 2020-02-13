@@ -11,18 +11,24 @@ class Search:
     api_version = 5.103
     group_id = None
 
+    def __init__(self, message):        # set group_id
+        self.group_id = message.text
 
-    def parse_response(self):                                                  # parsing data from page and sending it 2 bot core
-        response = requests.get('https://api.vk.com/method/groups.getById', params={
-            'access_token' : self.vk_parsing_Token,
-            'v' : self.api_version,
-            'group_id' : self.group_id
-        })
 
-        all_data = response.json()
-        cleaned_data = (200, all_data['response'][0]['name'], all_data['response'][0]['photo_200'], self.group_id)
-        return cleaned_data
+    def parse_response(self):
+            try:
+                # parsing data from page and sending it 2 bot core
+                response = requests.get('https://api.vk.com/method/groups.getById', params={
+                    'access_token' : self.vk_parsing_Token,
+                    'v' : self.api_version,
+                    'group_id' : self.group_id
+                })
 
+                all_data = response.json()
+                cleaned_data = (200, all_data['response'][0]['name'], all_data['response'][0]['photo_200'], self.group_id)
+                return cleaned_data
+            except Exception:
+                print(Exception)
 
 
     def search_response(self):                                                  # cheking page existence

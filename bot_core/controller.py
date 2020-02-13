@@ -1,5 +1,5 @@
 import telebot
-import time
+import datetime,time
 from bot_core.model import Model
 from VkParser.search_new_group import Search
 from VkParser.scanning import Scanner
@@ -18,15 +18,17 @@ def search_request(message):
 
         if message.text == '/search':
             bot.reply_to(message, "write id of group u want 2 find")  # answer on ur /search command
-            bot.register_next_step_handler(message, get_group_id)  # waiting 4 user's response
+            bot.register_next_step_handler(message, search_result)  # waiting 4 user's response
 
         if message.text == '/break':
             Configuration.working = False
             bot.reply_to(message, 'ok')
 
         if message.text == '/go':
-            Configuration.working = True
-            scanning(message)
+            if Configuration.working != True:
+                bot.reply_to(message, 'let\'s go')
+                Configuration.working = True
+                scanning(message)
 
         if message.text == '/reg':
             pass
@@ -36,6 +38,7 @@ def search_request(message):
 
         if message.text == '/hi' :
             bot.reply_to(message, "Wake da fu*k up \n Samuray")
+            print(message)
 
     except Exception:
         print(Exception)
@@ -108,32 +111,35 @@ def unsubscribing(group_id, User_id):
 
 
 # GROUPS SEARCH
-def get_group_id(message):      # collect user's response
-    group_id = message.text
-    Search.group_id = group_id      # set group_id
-    search_result(message)      # causes group_id processing
+# def get_group_id(message):      # collect user's response
+#     group_id = message.text
+#     Search.group_id = group_id      # set group_id
+#     search_result(message)      # causes group_id processing
 
 
 def search_result(message):     # making result and return parsed groups data
-    response = Search()
-    server_response = response.search_response()[0]
-    group_name = response.search_response()[1]
-    group_photo = response.search_response()[2]
-    group_id = response.search_response()[3]
+    try:
 
-    Configuration.search_cash['group_name'] = group_name
-    Configuration.search_cash['group_id'] = group_id
-    Configuration.search_cash['User_id'] = Configuration.user_id
-    Configuration.search_cash['emoji'] = '.'
-    print(Configuration.search_cash)
-    if server_response == 200:
-        answer = 'эта та группа что вы искали? \n \n' + group_name + '\n' + group_photo
-        get_buttons(message, answer, group_id)
+        response = Search(message)
+        server_response = response.search_response()[0]
+        group_name = response.search_response()[1]
+        group_photo = response.search_response()[2]
+        group_id = response.search_response()[3]
 
-    else:
-        answer = '404 not found'
-        bot.reply_to(message, answer)
+        Configuration.search_cash['group_name'] = group_name
+        Configuration.search_cash['group_id'] = group_id
+        Configuration.search_cash['User_id'] = Configuration.user_id
+        Configuration.search_cash['emoji'] = '.'
+        print(Configuration.search_cash)
+        if server_response == 200:
+            answer = 'эта та группа что вы искали? \n \n' + group_name + '\n' + group_photo
+            get_buttons(message, answer, group_id)
 
+        else:
+            answer = '404 not found'
+            bot.reply_to(message, answer)
+    except Exception:
+        print(Exception)
 
 
 #GET FEED
@@ -144,6 +150,9 @@ def print_all(message, response, group_id, user_id):
     time = response[1]
     text = response[3]
     first_image = response[4][0]
+
+    value = datetime.datetime.fromtimestamp(time)
+    time = value.strftime('%d-%m %H:%M')
 
     result = emoji + name + '\n' +str(time) + '\n\n' + str(text) + '\n ' + first_image
     bot.reply_to(message, result)
@@ -161,13 +170,14 @@ def scanning(message):
             if Configuration.working == False:
                 break
             Configuration.working = True
-            time.sleep(20)
+            time.sleep(5)
             if Configuration.working == False:
                 break
-            print('request was made' + ' ' + str(iteration))
             s = Scanner()
             response = s.parsing_response(subs_list[iteration][0])
             last_bup_time = m.get_last_pub_time(subs_list[iteration][0])[0][0]
+            print('request was made' + ' ' + str(iteration) )
+
             if response[1] > last_bup_time and response[2] != 1 :
                 print_all(message, response, subs_list[iteration][0], Configuration.user_id)
                 m.update_last_pub_time(response[1], subs_list[iteration][0], Configuration.user_id)

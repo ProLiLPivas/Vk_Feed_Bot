@@ -15,9 +15,18 @@ class Scanner:
         text = data['items'][num]['text']
         attachments = data['items'][num]['attachments']
         attachments_list = []
-
+        # print(attachments)
         for element in attachments :
-             attachments_list.append(element['photo']['sizes'][2]['url'])
+            if element['type'] == 'photo':
+                attachments_list.append(element['photo']['sizes'][2]['url'])
+            elif element['type']== 'video':
+                attachments_list.append(element['video']['access_key'])
+            elif element['type'] == 'audio':
+                pass
+            elif element['type']== 'poll':
+                pass
+            else:
+                attachments_list.append(element['type'] + 'unknown type')
 
         cleaned_result = [gr_id, date, is_ad, text, attachments_list]
         return cleaned_result
@@ -31,7 +40,7 @@ class Scanner:
             'count': 2
         })
         all_data = response.json()
-        cleaned_data = self.cleaning(all_data['response'], 1)
+        cleaned_data = self.cleaning(all_data['response'], 0)
         return cleaned_data
 
 
