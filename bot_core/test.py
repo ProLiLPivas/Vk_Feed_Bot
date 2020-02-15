@@ -13,3 +13,29 @@
 #
 # p(1234)
 #
+class Message:
+    a = 1
+    b = 2
+
+    def func(self):
+        self.a = 3
+
+
+
+message = Message()
+
+print(message)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
