@@ -12,12 +12,12 @@ bot = telebot.TeleBot(Configuration.TOKEN)  # Telegram bot token
 # COMMANDS LIST
 @bot.message_handler(content_types=['text'])
 def search_request(message):
-    try:
+    # try:
         if message.text =='/start':
-            bot.reply_to(message, "hello user\n welcome to my bot \n if u dont now how 2 use it write /info command ")
+            bot.reply_to(message, "Hello user\n welcome to my bot \n if u dont now how 2 use it write /info command ")
 
         if message.text == '/search':
-            bot.reply_to(message, "write id of group u want 2 find")  # answer on ur /search command
+            bot.reply_to(message, "Write id of group u want 2 find")  # answer on ur /search command
             bot.register_next_step_handler(message, search_result)  # waiting 4 user's response
 
         if message.text == '/break':
@@ -26,7 +26,7 @@ def search_request(message):
 
         if message.text == '/go':
             if Configuration.working != True:
-                bot.reply_to(message, 'let\'s go')
+                bot.reply_to(message, 'Let\'s go')
                 Configuration.working = True
                 scanning(message)
 
@@ -39,9 +39,12 @@ def search_request(message):
         if message.text == '/hi' :
             bot.reply_to(message, "Wake da fu*k up \n Samuray")
             print(message)
+            reg_user(message)
+            bot.reply_to(message, 'Hi ' + message.from_user.first_name)
 
-    except Exception:
-        print(Exception)
+
+    # except Exception:
+    #     print(Exception)
 
 
 @bot.callback_query_handler(func=lambda  call:True)
@@ -49,7 +52,7 @@ def callback_inline(call):
     try:
         if call.message:
             if call.data == 'subscribe':
-                bot.reply_to(call.message, "write emoji or any symbol which will denote ur subscribed group ")
+                bot.reply_to(call.message, "Write emoji or any symbol which will denote ur subscribed group ")
                 bot.register_next_step_handler(call.message, add_emoji)
 
             elif call.data == 'unsubscribe':
@@ -63,6 +66,14 @@ def callback_inline(call):
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=". . . ", reply_markup=None)
     except Exception as e:
         print(e)
+
+# ADD USER
+def reg_user(message):
+    telegram_id = message.from_user.id
+    name = message.from_user.first_name
+    token = Configuration.vk_parsing_Token
+    m = Model()
+    m.get_user(telegram_id, name, token)
 
 
 # SUBSCRIBE
@@ -81,10 +92,10 @@ def get_buttons(message, answer, group_id):
         bot.reply_to(message, answer , reply_markup=markup)
     else:
         markup.add(button2)
-        bot.reply_to(message, answer +'\n вы уже подписанны на эту группу', reply_markup=markup)
+        bot.reply_to(message, answer +'\n U already subscribed', reply_markup=markup)
 
 def add_emoji(message):
-    bot.reply_to(message, 'u want 2 choose this one '+ message.text)
+    bot.reply_to(message, 'U want 2 choose this one '+ message.text)
     Configuration.search_cash['emoji']  = message.text
     continue_subscribing(message)
 
@@ -152,7 +163,7 @@ def print_all(message, response, group_id, user_id):
     first_image = response[4][0]
 
     value = datetime.datetime.fromtimestamp(time)
-    time = value.strftime('%d-%m %H:%M')
+    time = value.strftime('%d-%m   %H:%M')
 
     result = emoji + name + '\n' +str(time) + '\n\n' + str(text) + '\n ' + first_image
     bot.reply_to(message, result)
@@ -170,7 +181,7 @@ def scanning(message):
             if Configuration.working == False:
                 break
             Configuration.working = True
-            time.sleep(5)
+            time.sleep(0.3)
             if Configuration.working == False:
                 break
             s = Scanner()
