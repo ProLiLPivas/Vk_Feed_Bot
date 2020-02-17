@@ -3,20 +3,8 @@ import sqlite3
 
 class Model:
 
-
-    # def make_connection(func):
-    #     def wrapper(*args, **kwargs):
-    #         conn = sqlite3.connect('F:/python/Vk_Feed_Bot/app.db')
-    #         cursor = conn.cursor()
-    #         result = func(*args, **kwargs)
-    #         conn.commit()
-    #         cursor.close()
-    #         conn.close()
-    #         return result
-    #     return wrapper
-
     # make db
-    adres = 'W:/vk_feed_bot/app.db'
+    adres = 'F:/python/vk_feed_bot/app.db'
 
     def make_DB(self,):
         conn = sqlite3.connect(self.adres)
@@ -30,7 +18,6 @@ class Model:
             '`group_amount` INT DEFAULT 0 ,'
             '`is_searching` BIT DEFAULT 0);'
         )
-
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS `groups`('
             '`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ,'
@@ -42,37 +29,46 @@ class Model:
         )
 
 
-
-
     def set_user(self, tg_id, name,token):
         conn = sqlite3.connect(self.adres)
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO users(`telegram_id`, `name`, `Users_Token`) VALUES(?);", (tg_id, name, token,))
+        cursor.execute("INSERT INTO users(`telegram_id`, `name`, `Users_Token`) VALUES(?,?,?);", (tg_id, name, token,))
         conn.commit()
         cursor.close()
         conn.close()
 
-    def get_user(self, user_id):
+    def get_user(self, tg_id):
         conn = sqlite3.connect(self.adres)
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM `users` WHERE `id`=?',(user_id,))
+        cursor.execute('SELECT * FROM `users` WHERE `telegram_id`=?',(tg_id,))
         user_data = cursor.fetchall();
         conn.commit()
         cursor.close()
         conn.close()
-        return user_data['from_user']
+        return user_data
 
+    def get_all_users(self):
+        conn = sqlite3.connect(self.adres)
+        cursor = conn.cursor()
+        cursor.execute('SELECT `telegram_id` FROM `users`')
+        users = cursor.fetchall();
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return users
 
     def update_amount(self, plus_minus, user_id):
         conn = sqlite3.connect(self.adres)
         cursor = conn.cursor()
-        cursor.execute('SELECT group_amount FROM users WHERE id=?', (user_id,))
+        cursor.execute('SELECT `group_amount` FROM `users` WHERE `id`=?', (user_id,))
         db_response = cursor.fetchall()[0][0]
         db_response += plus_minus
-        cursor.execute("UPDATE users SET group_amount=? WHERE id=? ", ( db_response, user_id, ))
+        cursor.execute("UPDATE `users` SET `group_amount`=? WHERE id=? ", ( db_response, user_id, ))
         conn.commit()
         cursor.close()
         conn.close()
+
+
 
     # groups
     def add_group(self, group_id, group_name, emoji, user_id):
@@ -101,10 +97,7 @@ class Model:
         conn.commit()
         cursor.close()
         conn.close()
-
         return  sub_list
-
-
 
     def get_last_pub_time(self,group_id):
         conn = sqlite3.connect(self.adres)
@@ -114,9 +107,7 @@ class Model:
         conn.commit()
         cursor.close()
         conn.close()
-
         return  time
-
 
     def get_emoji_n_name(self, group_id, user_id):
         conn = sqlite3.connect(self.adres)
@@ -128,9 +119,7 @@ class Model:
         conn.commit()
         cursor.close()
         conn.close()
-
         return name, emoji
-
 
     def update_last_pub_time(self, time, group_id, user_id):
         conn = sqlite3.connect(self.adres)
@@ -142,6 +131,7 @@ class Model:
 
 
 m = Model()
+# print(m.get_all_users())
 
 # m.reg_user('1095597354:AAFdxv1QCmdTMw3emW5Iy3frcZ_v7rIpnbQ')
 # {'content_type': 'text', 'message_id': 1813, 'from_user': {'id': 419356001, 'is_bot': False, 'first_name': 'Misha', 'username': 'Misha_40in', 'last_name': 'Sorokin', 'language_code': 'ru'}, 'date': 1581672169, 'c

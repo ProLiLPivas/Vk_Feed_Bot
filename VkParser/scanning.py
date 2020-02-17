@@ -13,23 +13,41 @@ class Scanner:
         date = data['items'][num]['date']
         is_ad = data['items'][num]['marked_as_ads']
         text = data['items'][num]['text']
-        attachments = data['items'][num]['attachments']
-        attachments_list = []
-        # print(attachments)
-        for element in attachments :
-            if element['type'] == 'photo':
-                attachments_list.append(element['photo']['sizes'][2]['url'])
-            elif element['type']== 'video':
-                attachments_list.append(element['video']['access_key'])
-            elif element['type'] == 'audio':
-                pass
-            elif element['type']== 'poll':
-                pass
-            else:
-                attachments_list.append(element['type'] + 'unknown type')
+        try:
+            attachments = data['items'][num]['attachments']
+        except:
+            attachments = data['items'][num]['copy_history'][0]['attachments']
+        finally:
+            attachments_list = []
 
-        cleaned_result = [gr_id, date, is_ad, text, attachments_list]
-        return cleaned_result
+            for element in attachments :
+                if element['type'] == 'photo':
+                    try:
+                        e = element['photo']['sizes'][7]['url']
+                        attachments_list.append(e)
+                    except:
+                        try:
+                            e = element['photo']['sizes'][6]['url']
+                            attachments_list.append(e)
+                        except:
+                            try:
+                                e = element['photo']['sizes'][5]['url']
+                                attachments_list.append(e)
+                            except Exception:
+                                print(Exception)
+
+
+                elif element['type']== 'video':
+                    attachments_list.append(element['video']['access_key'])
+                elif element['type'] == 'audio':
+                    pass
+                elif element['type']== 'poll':
+                    pass
+                else:
+                    attachments_list.append(element['type'] + 'unknown type')
+
+            cleaned_result = [gr_id, date, is_ad, text, attachments_list]
+            return cleaned_result
 
 
     def parsing_response(self, group_id):
@@ -40,13 +58,8 @@ class Scanner:
             'count': 2
         })
         all_data = response.json()
-        cleaned_data = self.cleaning(all_data['response'], 0)
+        cleaned_data = self.cleaning(all_data['response'], 1)
         return cleaned_data
-
-
-
-
-
 
 
 
