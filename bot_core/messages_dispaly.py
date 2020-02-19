@@ -15,16 +15,16 @@ class Display:
     def reg_user(self, message):
         m = Model()
         users = m.get_all_users()
+        is_exist = False
         for user in users:
-            print(user)
             if user[0] == message.from_user.id:
                 print(1)
-                break
-            else:
-                telegram_id = message.from_user.id
-                name = message.from_user.first_name
-                token = Configuration.vk_parsing_Token
-                m.set_user(telegram_id, name, token)
+                is_exist = True
+        if not is_exist:
+            telegram_id = message.from_user.id
+            name = message.from_user.first_name
+            token = Configuration.vk_parsing_Token
+            m.set_user(telegram_id, name, token)
 
     # SUB_LIST
     def sub_list_buttons(self):
@@ -45,10 +45,14 @@ class Display:
 
     def continue_subscribing(self, message):
         emoji = Configuration.search_cash['emoji']
+        user_id = Configuration.search_cash['user_id']
+        group_name = Configuration.search_cash['group_name']
+        group_id = Configuration.search_cash['group_id']
+
         print(emoji)
-        self.subscribing(Configuration.search_cash['group_id'], Configuration.search_cash['group_name'], emoji,
-                         Configuration.user_id)
-        self.bot.reply_to(message, "u r successfully subscribe on " + Configuration.search_cash['group_name'])
+
+        self.subscribing( group_id ,group_name, emoji, user_id)
+        self.bot.reply_to(message, "u r successfully subscribe on " + group_name)
 
 
     def subscribing(self, group_id, group_name, emoji, User_id):
@@ -68,7 +72,8 @@ class Display:
         button1 = types.InlineKeyboardButton('Subscribe', callback_data='subscribe')
         button2 = types.InlineKeyboardButton('Unsubscribe', callback_data='unsubscribe')
         m = Model()
-        subs_list = m.get_sub_list(Configuration.user_id)
+        tg_id = message.from_user.id
+        subs_list = m.get_sub_list(tg_id)
         for group_num in range(0, len(subs_list)):
             if subs_list[group_num][0] == group_id:
                 group_is_exist = 1
@@ -81,15 +86,18 @@ class Display:
 
     def search_result(self, message):  # making result and return parsed groups data
         try:
+            m = Model()
             response = Search(message)
             server_response = response.search_response()[0]
             group_name = response.search_response()[1]
             group_photo = response.search_response()[2]
             group_id = response.search_response()[3]
+            tg_id = message.from_user.id
+            user_id = m.get_user(tg_id)[0][0]
 
             Configuration.search_cash['group_name'] = group_name
             Configuration.search_cash['group_id'] = group_id
-            Configuration.search_cash['User_id'] = Configuration.user_id
+            Configuration.search_cash['user_id'] = user_id
             Configuration.search_cash['emoji'] = '.'
             print(Configuration.search_cash)
             if server_response == 200:
@@ -102,8 +110,9 @@ class Display:
             print(Exception)
 
     # GET FEED
-    def print_all(self, message, response, group_id, user_id):
+    def print_all(self, message, response, group_id, tg_id):
         m = Model()
+        user_id = m.get_user(tg_id)[0][0]
         name = m.get_emoji_n_name(group_id, user_id)[0]
         emoji = m.get_emoji_n_name(group_id, user_id)[1]
         time = response[1]
@@ -122,25 +131,41 @@ class Display:
 
 
     def scanning(self, message):
-        while Configuration.working:
+        while True:
             m = Model()
-            subs_list = m.get_sub_list(Configuration.user_id)
-            for iteration in range(0, len(subs_list)):
-                if Configuration.working == False:
-                    break
-                Configuration.working = True
-                time.sleep(1)
-                if Configuration.working == False:
-                    break
-                s = Scanner()
-                response = s.parsing_response(subs_list[iteration][0])
-                last_bup_time = m.get_last_pub_time(subs_list[iteration][0])[0][0]
-                print('request was made' + ' ' + str(iteration))
+            users_list = m.get_all_users()
 
-                if response[1] > last_bup_time and response[2] != 1:
-                    self.print_all(message, response, subs_list[iteration][0], Configuration.user_id)
-                    m.update_last_pub_time(response[1], subs_list[iteration][0], Configuration.user_id)
+            # while m.get_user(tg_id)[0][5] == 1 :
+            for user in users_list:
+
+                tg_id = user[0]
+                subs_list = m.get_sub_list(tg_id)
+                print(subs_list)
+
+                if subs_list != []:
+                    if m.get_user(tg_id)[0][5] == 0:
+                        continue
+                    for iteration in range(0, len(subs_list)):
+                        if m.get_user(tg_id)[0][5] == 0:
+                            break
+                        m.set_isSearching(tg_id, 1)
+                        time.sleep(Configuration.timeout)
+                        if m.get_user(tg_id)[0][5] == 0:
+                            break
+                        s = Scanner()
+
+                        response = s.parsing_response(subs_list[iteration][0])
+                        last_bup_time = m.get_last_pub_time(subs_list[iteration][0], tg_id)[0][0]
+                        print('request was made' + ' ' + str(iteration) + ' ' + message.from_user.first_name)
+
+                        if response[1] > last_bup_time and response[2] != 1:
+                            self.print_all(message, response, subs_list[iteration][0], tg_id)
+                            m.update_last_pub_time(response[1], subs_list[iteration][0], tg_id)
+                else:
+                    self.bot.reply_to(message, 'Sorry u dont subscribed on any group \n write /info 2 know how 2 do it')
+                    m.set_isSearching(tg_id, 0)
 
     def event_loop(self):
         pass
+
 

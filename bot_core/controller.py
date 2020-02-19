@@ -1,8 +1,6 @@
 import time
 
 import telebot
-from pip._internal.utils import logging
-
 from bot_core.Config import Configuration
 from bot_core.messages_dispaly import Display
 from bot_core.model import Model
@@ -16,7 +14,7 @@ model = Model()
 # COMMANDS LIST
 @bot.message_handler(content_types=['text'])
 def search_request(message):
-    # try:
+    try:
         if message.text =='/start':
             bot.reply_to(message, "Hello user\n welcome to my bot \n if u dont now how 2 use it write /info command ")
             display.reg_user(message)
@@ -26,19 +24,21 @@ def search_request(message):
             bot.register_next_step_handler(message, display.search_result)  # waiting 4 user's response
 
         if message.text == '/break':
-            Configuration.working = False
+            m = Model()
+            m.set_isSearching(message.from_user.id, 0)
             bot.reply_to(message, 'ok')
 
         if message.text == '/go':
-            if Configuration.working != True:
+            m = Model()
+            if m.get_user(message.from_user.id)[0][5] != 1:
                 bot.reply_to(message, 'Let\'s go')
-                Configuration.working = True
+                m.set_isSearching(message.from_user.id, 1)
                 display.scanning(message)
 
+
         if message.text == '/mygroups':
-            id = model.get_user(message.from_user.id)[0][0]
-            groups = model.get_sub_list(id)
-            print(groups)
+            groups = model.get_sub_list(message.from_user.id)
+            # print(groups)
             for group in groups:
                 bot.reply_to(message, group[0])
 
@@ -48,10 +48,9 @@ def search_request(message):
         if message.text == '/hi' :
             bot.reply_to(message, "Wake da fu*k up \n Samuray")
             print(message)
-            # reg_user(message)
             bot.reply_to(message, 'Hi ' + message.from_user.first_name)
-    # except Exception:
-    #     print(Exception)
+    except Exception:
+        print(Exception)
 
 
 @bot.callback_query_handler(func=lambda  call:True)
@@ -63,7 +62,7 @@ def callback_inline(call):
                 bot.register_next_step_handler(call.message, display.add_emoji)
 
             elif call.data == 'unsubscribe':
-                display.unsubscribing(Configuration.search_cash['group_id'],Configuration.user_id)
+                display.unsubscribing(Configuration.search_cash['group_id'], Configuration.search_cash['user_id'])
 
             elif call.data == 'Y':
                 pass
@@ -84,6 +83,9 @@ if __name__ == "__main__":
             # logging.error(e)
             time.sleep(5)
             print('Internet error')
+
+
+
 
 
 
