@@ -1,4 +1,5 @@
 import datetime,time
+import requests
 import telebot
 from bot_core.model import Model
 from VkParser.search_new_group import Search
@@ -27,14 +28,21 @@ class Display:
             m.set_user(telegram_id, name, token)
 
     # SUB_LIST
-    def sub_list_buttons(self):
+    def get_sublist(self, message):
         markup = types.InlineKeyboardMarkup(row_width=2)
-        _btn = types.InlineKeyboardButton('chenge emoji', callback_data='subscribe')
-        button2 = types.InlineKeyboardButton('unsub', callback_data='unsubscribe')
-        button2 = types.InlineKeyboardButton('cancel', callback_data='unsubscribe')
+        unsub_btn = types.InlineKeyboardButton('unsub', callback_data='u')
+        change_emoji_btn = types.InlineKeyboardButton('change emoji', callback_data='e')
+        cancel_btn = types.InlineKeyboardButton('cancel', callback_data='c')
 
-    def get_sublist(self):
-        pass
+        model = Model()
+        count = 0
+        groups = model.get_sub_list(message.from_user.id)
+        markup.add(unsub_btn, change_emoji_btn, cancel_btn)
+        for group in groups:
+            count +=1
+            user_id = model.get_user(message.from_user.id)[0][0]
+            info = model.get_emoji_n_name(group[0], user_id)
+            self.bot.reply_to(message, str(count)+'. ' + info[1] + ' ' +info[0] , reply_markup=markup)
 
     # SUBSCRIBE
     def add_emoji(self, message):
@@ -92,8 +100,10 @@ class Display:
             group_name = response.search_response()[1]
             group_photo = response.search_response()[2]
             group_id = response.search_response()[3]
+            is_closed = response.search_response()[4]
             tg_id = message.from_user.id
             user_id = m.get_user(tg_id)[0][0]
+
 
             Configuration.search_cash['group_name'] = group_name
             Configuration.search_cash['group_id'] = group_id
@@ -101,50 +111,61 @@ class Display:
             Configuration.search_cash['emoji'] = '.'
             print(Configuration.search_cash)
             if server_response == 200:
-                answer = 'эта та группа что вы искали? \n \n' + group_name + '\n' + group_photo
-                self.search_get_buttons(message, answer, group_id)
+                if is_closed == 0:
+                    answer = 'эта та группа что вы искали? \n \n' + group_name + '\n' + group_photo
+                    self.search_get_buttons(message, answer, group_id)
+                else:
+                    answer = 'Sorry this croup is closed, u cant sub it \n \n' + group_name + '\n' + group_photo
+                    self.bot.reply_to(message, answer)
             else:
                 answer = '404 not found'
                 self.bot.reply_to(message, answer)
         except Exception:
-            print(Exception)
+            print('searching error')
 
     # GET FEED
-    def print_all(self, message, response, group_id, tg_id):
+
+    def print_all(self, response, group_id, tg_id):
         m = Model()
         user_id = m.get_user(tg_id)[0][0]
-        name = m.get_emoji_n_name(group_id, user_id)[0]
+        name = m.get_emoji_n_name(group_id, user_id)[0].replace('&', ' and ')
         emoji = m.get_emoji_n_name(group_id, user_id)[1]
         time = response[1]
         text = response[3]
-        first_image = response[4][0]
+        if response[4] != []:
+            first_attachment = response[4][0]
+        else:
+            first_attachment = ' '
 
         value = datetime.datetime.fromtimestamp(time)
         time = value.strftime('%d-%m   %H:%M')
 
-        result = emoji + name + '\n' + str(time) + '\n\n' + str(text) + '\n ' + first_image
-        self.bot.reply_to(message, result)
-
+        result = emoji + name + '\n' + str(time) + '\n\n' + str(text) + '\n ' + first_attachment
+        print(result)
+        url = Configuration.URL + 'sendmessage?chat_id={}&text={}'.format(tg_id, result)
+        requests.get(url)
+        iteration = 1
         if len(response[4]) > 1:
-            for image in range(1, len(response[4])):
-                self.bot.reply_to(message, response[4][image])
+            for attachment in range(1, len(response[4])):
+                iteration += 1
+                post_part = Configuration.URL + 'sendmessage?chat_id={}&text={}'.format(tg_id, str(iteration)+ '. ' + response[4][attachment])
+                requests.get(post_part)
 
 
-    def scanning(self, message):
+    def scanning(self):
         while True:
             m = Model()
             users_list = m.get_all_users()
-
-            # while m.get_user(tg_id)[0][5] == 1 :
             for user in users_list:
 
                 tg_id = user[0]
                 subs_list = m.get_sub_list(tg_id)
                 print(subs_list)
 
+                if m.get_user(tg_id)[0][5] == 0:
+                    continue
                 if subs_list != []:
-                    if m.get_user(tg_id)[0][5] == 0:
-                        continue
+
                     for iteration in range(0, len(subs_list)):
                         if m.get_user(tg_id)[0][5] == 0:
                             break
@@ -156,13 +177,14 @@ class Display:
 
                         response = s.parsing_response(subs_list[iteration][0])
                         last_bup_time = m.get_last_pub_time(subs_list[iteration][0], tg_id)[0][0]
-                        print('request was made' + ' ' + str(iteration) + ' ' + message.from_user.first_name)
+                        print('request was made' + ' ' + str(iteration) + ' ' + str(tg_id))
 
                         if response[1] > last_bup_time and response[2] != 1:
-                            self.print_all(message, response, subs_list[iteration][0], tg_id)
+                            self.print_all(response, subs_list[iteration][0], tg_id)
                             m.update_last_pub_time(response[1], subs_list[iteration][0], tg_id)
                 else:
-                    self.bot.reply_to(message, 'Sorry u dont subscribed on any group \n write /info 2 know how 2 do it')
+                    url = Configuration.URL + 'sendmessage?chat_id={}&text={}'.format(tg_id,'Sorry u dont subscribed on any group \n write /info 2 know how 2 do it')
+                    requests.get(url)
                     m.set_isSearching(tg_id, 0)
 
     def event_loop(self):

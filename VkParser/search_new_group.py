@@ -25,7 +25,7 @@ class Search:
                 })
 
                 all_data = response.json()
-                cleaned_data = (200, all_data['response'][0]['name'], all_data['response'][0]['photo_200'], self.group_id)
+                cleaned_data = (200, all_data['response'][0]['name'], all_data['response'][0]['photo_200'], self.group_id, all_data['response'][0]['is_closed'])
                 return cleaned_data
             except Exception:
                 print(Exception)

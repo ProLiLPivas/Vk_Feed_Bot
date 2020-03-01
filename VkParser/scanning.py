@@ -13,41 +13,68 @@ class Scanner:
         date = data['items'][num]['date']
         is_ad = data['items'][num]['marked_as_ads']
         text = data['items'][num]['text']
+
         try:
             attachments = data['items'][num]['attachments']
         except:
-            attachments = data['items'][num]['copy_history'][0]['attachments']
-        finally:
-            attachments_list = []
+            try:
+                more_text = data['items'][num]['copy_history'][0]['text']
+                attachments = data['items'][num]['copy_history'][0]['attachments']
+                text = '\n\n ' + more_text
+            except:
+                attachments = []
+                print(data)
 
-            for element in attachments :
+        attachments_list = []
+
+        try:
+            geo = data['items'][num]['geo']
+            location = 'https://www.google.ru/maps/search' # + geo['coordinates']
+            attachments_list.append(location)
+        except:
+            pass
+
+        for element in attachments :
                 if element['type'] == 'photo':
-                    try:
-                        e = element['photo']['sizes'][7]['url']
-                        attachments_list.append(e)
-                    except:
-                        try:
-                            e = element['photo']['sizes'][6]['url']
-                            attachments_list.append(e)
-                        except:
-                            try:
-                                e = element['photo']['sizes'][5]['url']
-                                attachments_list.append(e)
-                            except Exception:
-                                print(Exception)
-
+                        image = element['photo']['sizes'][-1]['url']
+                        attachments_list.append(image)
 
                 elif element['type']== 'video':
-                    attachments_list.append(element['video']['access_key'])
+                    video = element['video']['access_key']
+                    attachments_list.append(video)
+
                 elif element['type'] == 'audio':
                     pass
-                elif element['type']== 'poll':
+
+                elif element['type'] == 'link':
+                    url = element['link']['url']
+                    description = element['link']['description']
+
+                    if description == 'Playlist':
+                        title = element['link']['title']
+                        image = element['link']['photo']['sizes'][-1]['url']
+                        album = title + '/n' + image + '/n/n' + url
+                        attachments_list.append(album)
+                    else:
+                        link = url + '/n/n' + description
+                        attachments_list.append(link)
                     pass
+
+                elif element['type']== 'doc':
+                    title = element['doc']['title']
+                    url = element['doc']['url']
+                    document = title + '/n/n' + url
+                    attachments_list.append(album)
+
+                elif element['type']== 'poll':
+                    poll = 'нахуй иди мне лень с этим разбираться'
+                    attachments_list.append(poll)
+
                 else:
                     attachments_list.append(element['type'] + 'unknown type')
 
-            cleaned_result = [gr_id, date, is_ad, text, attachments_list]
-            return cleaned_result
+        cleaned_result = [gr_id, date, is_ad, text, attachments_list]
+        return cleaned_result
 
 
     def parsing_response(self, group_id):
@@ -55,7 +82,7 @@ class Scanner:
             'access_token': self.Token,
             'v': self.version,
             'domain': group_id,
-            'count': 2
+            'count': 3
         })
         all_data = response.json()
         cleaned_data = self.cleaning(all_data['response'], 1)

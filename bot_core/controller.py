@@ -14,7 +14,7 @@ model = Model()
 # COMMANDS LIST
 @bot.message_handler(content_types=['text'])
 def search_request(message):
-    try:
+    # try:
         if message.text =='/start':
             bot.reply_to(message, "Hello user\n welcome to my bot \n if u dont now how 2 use it write /info command ")
             display.reg_user(message)
@@ -33,14 +33,9 @@ def search_request(message):
             if m.get_user(message.from_user.id)[0][5] != 1:
                 bot.reply_to(message, 'Let\'s go')
                 m.set_isSearching(message.from_user.id, 1)
-                display.scanning(message)
-
 
         if message.text == '/mygroups':
-            groups = model.get_sub_list(message.from_user.id)
-            # print(groups)
-            for group in groups:
-                bot.reply_to(message, group[0])
+            display.get_sublist(message)
 
         if message.text == '/info':
             bot.reply_to(message, Configuration.info)
@@ -49,13 +44,21 @@ def search_request(message):
             bot.reply_to(message, "Wake da fu*k up \n Samuray")
             print(message)
             bot.reply_to(message, 'Hi ' + message.from_user.first_name)
-    except Exception:
-        print(Exception)
+
+        if message.text == '/':
+            if message.from_user.id == Configuration.Admin:
+                print('app is running')
+                display.scanning()
+                print(message)
+
+
+    # except Exception:
+    #    print('command error ')
 
 
 @bot.callback_query_handler(func=lambda  call:True)
 def callback_inline(call):
-    try:
+    # try:
         if call.message:
             if call.data == 'subscribe':
                 bot.reply_to(call.message, "Write emoji or any symbol which will denote ur subscribed group ")
@@ -68,21 +71,29 @@ def callback_inline(call):
                 pass
             elif call.data == 'N':
                 pass
+            elif call.data[0] == 'e':
+                pass
+            elif call.data[0] == 'u':
+                pass
+            elif call.data[0] == 'c':
+                pass
 
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=". . . ", reply_markup=None)
-    except Exception as e:
-        print(e)
+    # except Exception:
+    #     print('buttons error')
 
 
 # Running
 if __name__ == "__main__":
-    while True:
-        try:
+    # while True:
+    #     try:
             bot.polling(none_stop=True)
-        except Exception as e:
-            # logging.error(e)
-            time.sleep(5)
-            print('Internet error')
+
+
+        # except Exception as e:
+        #     # logging.error(e)
+        #     time.sleep(5)
+        #     print('Internet error')
 
 
 
