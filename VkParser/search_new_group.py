@@ -28,7 +28,8 @@ class Search:
                 cleaned_data = (200, all_data['response'][0]['name'], all_data['response'][0]['photo_200'], self.group_id, all_data['response'][0]['is_closed'])
                 return cleaned_data
             except Exception:
-                print(Exception)
+                return (404, 'name not found', 'photo not found', self.group_id)
+
 
 
     def search_response(self):                                                  # cheking page existence

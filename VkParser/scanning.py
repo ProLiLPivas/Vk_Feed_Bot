@@ -44,7 +44,7 @@ class Scanner:
                     attachments_list.append(video)
 
                 elif element['type'] == 'audio':
-                    pass
+                    attachments_list.append('some audio')
 
                 elif element['type'] == 'link':
                     url = element['link']['url']
@@ -52,19 +52,21 @@ class Scanner:
 
                     if description == 'Playlist':
                         title = element['link']['title']
-                        image = element['link']['photo']['sizes'][-1]['url']
-                        album = title + '/n' + image + '/n/n' + url
+                        # image = element['link']['photo']['sizes'][-1]['url']
+                        text +='\n' + title + '\n'
+                        album =  url
                         attachments_list.append(album)
                     else:
-                        link = url + '/n/n' + description
+                        # text += '\n\n' +description
+                        link = url
                         attachments_list.append(link)
                     pass
 
                 elif element['type']== 'doc':
                     title = element['doc']['title']
                     url = element['doc']['url']
-                    document = title + '/n/n' + url
-                    attachments_list.append(album)
+                    # document = title + '/n/n' + url
+                    attachments_list.append(url)
 
                 elif element['type']== 'poll':
                     poll = 'нахуй иди мне лень с этим разбираться'
@@ -89,5 +91,23 @@ class Scanner:
         return cleaned_data
 
 
+    def parsing_group(self, group_id, amount):
+        response = requests.get('https://api.vk.com/method/wall.get', params={
+            'access_token': self.Token,
+            'v': self.version,
+            'domain': group_id,
+            'count': amount
+        })
+        all_data = response.json()
+
+        for post in range(0, amount):
+            yield self.cleaning(all_data['response'], post)
 
 
+# s = Scanner()
+# i = 0
+# responce = s.parsing_group( '11f210e411f210e411f210e4ad119d60', 20)
+# for r in responce:
+#     i += 1
+#     print(i)
+#     print(r)

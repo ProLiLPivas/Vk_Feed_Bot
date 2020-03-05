@@ -29,35 +29,42 @@ class Display:
 
     # SUB_LIST
     def get_sublist(self, message):
-        markup = types.InlineKeyboardMarkup(row_width=2)
-        unsub_btn = types.InlineKeyboardButton('unsub', callback_data='u')
-        change_emoji_btn = types.InlineKeyboardButton('change emoji', callback_data='e')
-        cancel_btn = types.InlineKeyboardButton('cancel', callback_data='c')
+        '''this func gonna work after "My Subs" command
+        user get full list of groups he subscribed
+        he can get more group options if he choose one of them
+        '''
+
+        sub_list = types.InlineKeyboardMarkup(row_width=2)
 
         model = Model()
         count = 0
+        tg_id = message.from_user.id
         groups = model.get_sub_list(message.from_user.id)
-        markup.add(unsub_btn, change_emoji_btn, cancel_btn)
+
         for group in groups:
-            count +=1
-            user_id = model.get_user(message.from_user.id)[0][0]
-            info = model.get_emoji_n_name(group[0], user_id)
-            self.bot.reply_to(message, str(count)+'. ' + info[1] + ' ' +info[0] , reply_markup=markup)
+            count += 1                                                  # counter which count number of group
+            user_id = model.get_user(message.from_user.id)[0][0]        # next function require user's, so we get it fron db
+            emoji = model.get_emoji_n_name(group[0], user_id)[1]        # we get emoji &
+            group_name =  model.get_emoji_n_name(group[0], user_id)[0]  # & group name from data base. We need them to form message 4 user
+
+            button_text = str(count)+'. ' + emoji + ' ' + group_name
+            group_btn = types.InlineKeyboardButton(button_text , callback_data='!' + group[0])
+            sub_list.add(group_btn)
+
+        self.bot.reply_to(message, 'u subscribe on {} groups'.format(count) ,reply_markup=sub_list)
+
 
     # SUBSCRIBE
     def add_emoji(self, message):
         self.bot.reply_to(message, 'U want 2 choose this one ' + message.text)
-        Configuration.search_cash['emoji'] = message.text
+        Configuration.search_cash['emoji'] = message.text[0]
         self.continue_subscribing(message)
-
 
     def continue_subscribing(self, message):
         emoji = Configuration.search_cash['emoji']
         user_id = Configuration.search_cash['user_id']
         group_name = Configuration.search_cash['group_name']
         group_id = Configuration.search_cash['group_id']
-
-        print(emoji)
 
         self.subscribing( group_id ,group_name, emoji, user_id)
         self.bot.reply_to(message, "u r successfully subscribe on " + group_name)
@@ -97,35 +104,36 @@ class Display:
             m = Model()
             response = Search(message)
             server_response = response.search_response()[0]
-            group_name = response.search_response()[1]
-            group_photo = response.search_response()[2]
-            group_id = response.search_response()[3]
-            is_closed = response.search_response()[4]
-            tg_id = message.from_user.id
-            user_id = m.get_user(tg_id)[0][0]
-
-
-            Configuration.search_cash['group_name'] = group_name
-            Configuration.search_cash['group_id'] = group_id
-            Configuration.search_cash['user_id'] = user_id
-            Configuration.search_cash['emoji'] = '.'
-            print(Configuration.search_cash)
             if server_response == 200:
+                group_name = response.search_response()[1]
+                group_photo = response.search_response()[2]
+                group_id = response.search_response()[3]
+                is_closed = response.search_response()[4]
+                tg_id = message.from_user.id
+                user_id = m.get_user(tg_id)[0][0]
+
+                Configuration.search_cash['group_name'] = group_name
+                Configuration.search_cash['group_id'] = group_id
+                Configuration.search_cash['user_id'] = user_id
+                Configuration.search_cash['emoji'] = '.'
+                print(Configuration.search_cash)
+
                 if is_closed == 0:
                     answer = 'эта та группа что вы искали? \n \n' + group_name + '\n' + group_photo
                     self.search_get_buttons(message, answer, group_id)
                 else:
                     answer = 'Sorry this croup is closed, u cant sub it \n \n' + group_name + '\n' + group_photo
                     self.bot.reply_to(message, answer)
-            else:
+            elif server_response == 404:
                 answer = '404 not found'
                 self.bot.reply_to(message, answer)
         except Exception:
             print('searching error')
 
-    # GET FEED
 
+    # GET FEED
     def print_all(self, response, group_id, tg_id):
+        ''' this function was made 2 arrange all information got from vk group send it 2 users tg chat '''
         m = Model()
         user_id = m.get_user(tg_id)[0][0]
         name = m.get_emoji_n_name(group_id, user_id)[0].replace('&', ' and ')
@@ -135,7 +143,7 @@ class Display:
         if response[4] != []:
             first_attachment = response[4][0]
         else:
-            first_attachment = ' '
+            first_attachment = ' '  # if post dont have any attachment we write empty string
 
         value = datetime.datetime.fromtimestamp(time)
         time = value.strftime('%d-%m   %H:%M')
@@ -145,7 +153,7 @@ class Display:
         url = Configuration.URL + 'sendmessage?chat_id={}&text={}'.format(tg_id, result)
         requests.get(url)
         iteration = 1
-        if len(response[4]) > 1:
+        if len(response[4]) > 1:    # this block work then post have 2 or more attachments and send it in new message, because if we have lone link telegram
             for attachment in range(1, len(response[4])):
                 iteration += 1
                 post_part = Configuration.URL + 'sendmessage?chat_id={}&text={}'.format(tg_id, str(iteration)+ '. ' + response[4][attachment])
@@ -186,6 +194,45 @@ class Display:
                     url = Configuration.URL + 'sendmessage?chat_id={}&text={}'.format(tg_id,'Sorry u dont subscribed on any group \n write /info 2 know how 2 do it')
                     requests.get(url)
                     m.set_isSearching(tg_id, 0)
+
+    # UPDATE EMOJI
+    def continue_change(self):
+        pass
+
+    change_emoji_cash = None
+
+    def change_emoji(self, message):
+        model = Model()
+        emoji = message.text[0]
+        group_id = self.change_emoji_cash[:0] + self.change_emoji_cash[0 + 1:]
+        user_id = model.get_user(message.chat.id)[0][0]
+        model.update_emoji(group_id, user_id, emoji)
+        self.bot.reply_to(message, 'u change emoji on '+ emoji)
+
+
+
+    # GET FEED FROM ONE GROUP
+
+
+    def get_group_feed(self, call, group, amount=10):
+        m = Model()
+        s = Scanner()
+        groups = m.get_sub_list(call.message.chat.id)
+        print(groups)
+        try:
+            gr = groups[groups.index((group,))]
+            response = s.parsing_group(gr , amount)
+            try:
+                for post in response:
+                    self.print_all(post, group, call.message.chat.id)
+            except Exception:
+                self.bot.reply_to(call.message, 'It was last post in this group')
+        except Exception:
+            self.bot.reply_to(call.message, 'Sorry u dont sub this group ')
+
+
+
+
 
     def event_loop(self):
         pass

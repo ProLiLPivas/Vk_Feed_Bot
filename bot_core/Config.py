@@ -15,6 +15,12 @@ class Configuration:
         'user_id': None
     }
 
+    sub_list_cash = {
+        'group_id' : None,
+        'amount' : None,
+
+    }
+
 
     info = 'hello here u can read instructions how 2 use this bot \n' \
            'firstly u need 2 reg ur vk account, write command /red  \n' \

@@ -125,6 +125,14 @@ class Model:
         conn.close()
         return  time
 
+    def update_emoji(self, group_id, user_id, new_emoji):
+        conn = sqlite3.connect(self.adres)
+        cursor = conn.cursor()
+        cursor.execute('UPDATE groups SET emoji=? WHERE group_id=? AND user_id=?', (new_emoji, group_id, user_id, ))
+        conn.commit()
+        cursor.close()
+        conn.close()
+
     def get_emoji_n_name(self, group_id, user_id):
         conn = sqlite3.connect(self.adres)
         cursor = conn.cursor()
@@ -152,6 +160,9 @@ m = Model()
 # print(m.get_user(419356001)[0][5])
 # a = m.get_last_pub_time('konturgusya', 419356001)
 # print(a)
-print(m.get_all_users())
+# print(m.get_all_users())
 # m.reg_user('1095597354:AAFdxv1QCmdTMw3emW5Iy3frcZ_v7rIpnbQ')
 # {'content_type': 'text', 'message_id': 1813, 'from_user': {'id': 419356001, 'is_bot': False, 'first_name': 'Misha', 'username': 'Misha_40in', 'last_name': 'Sorokin', 'language_code': 'ru'}, 'date': 1581672169, 'c
+# print(m.get_user(419356001)[0][0])
+
+m.update_emoji('konturgusya', 1, 'ююю')

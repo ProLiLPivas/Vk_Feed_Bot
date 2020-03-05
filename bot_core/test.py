@@ -57,4 +57,14 @@ import requests
 # a = s.replace('%', ' ')
 #
 # print(a)
-# print(s)
+# # print(s)
+#
+#
+# l = [('vssv',),('vars',),('vsgg',),('vsggsg',), ('a',)]
+# value = ' '
+#
+# a = l.index((value,))
+# print(a)
+
+a = 'fggvvvv'[0]
+print(a)
