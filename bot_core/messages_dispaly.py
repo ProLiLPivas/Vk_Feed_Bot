@@ -65,13 +65,21 @@ class Display:
         user_id = Configuration.search_cash['user_id']
         group_name = Configuration.search_cash['group_name']
         group_id = Configuration.search_cash['group_id']
+        tg_id = message.from_user.id
 
-        self.subscribing( group_id ,group_name, emoji, user_id)
+        self.subscribing( group_id ,group_name, emoji, user_id, tg_id)
         self.bot.reply_to(message, "u r successfully subscribe on " + group_name)
 
 
-    def subscribing(self, group_id, group_name, emoji, User_id):
+    def subscribing(self, group_id, group_name, emoji, User_id, tg_id):
         m = Model()
+        sub_list = m.get_sub_list(tg_id)
+        for group in sub_list:
+            for group in sub_list:
+                if group[0] == group_id:
+                    break
+                else:
+                    continue
         m.add_group(group_id, group_name, emoji, User_id)
         m.update_amount(1, User_id)
 

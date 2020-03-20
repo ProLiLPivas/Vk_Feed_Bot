@@ -60,14 +60,18 @@ def search_request(message):
                 bot.reply_to(message, 'Let\'s go', reply_markup=markup)
                 m.set_isSearching(message.from_user.id, 1)
 
+
         if message.text == 'My Subs':
             display.get_sublist(message)
+
 
         if message.text == 'Info':
             bot.reply_to(message, Configuration.info)
 
+
         if message.text == 'Hi' :
             bot.reply_to(message, 'Hi ' + message.from_user.first_name,   )
+
 
         if message.text == '/':
             if message.from_user.id == Configuration.Admin:
@@ -82,7 +86,7 @@ def search_request(message):
 
 @bot.callback_query_handler(func=lambda  call:True)
 def callback_inline(call):
-    # try:
+    try:
         if call.message:
             if call.data == 'subscribe':
                 bot.reply_to(call.message, "Write emoji or any symbol which will denote ur subscribed group ")
@@ -111,13 +115,13 @@ def callback_inline(call):
                 bot.reply_to(call.message, text, reply_markup=markup)
 
             elif call.data[0] == 'e':
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=". . . ", reply_markup=None)
                 display.change_emoji_cash = call.data
                 bot.reply_to(call.message, 'write ur emoji')
                 bot.register_next_step_handler(call.message, display.change_emoji)
 
-
-
             elif call.data[0] == 'u':
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=". . . ", reply_markup=None)
                 text = 'u unsub '
                 group_id = call.data[:0] + call.data[0+1:]
                 user_id = model.get_user(call.message.chat.id)[0][0]
@@ -125,8 +129,8 @@ def callback_inline(call):
                 display.unsubscribing(group_id, user_id)
                 bot.reply_to(call.message, text)
 
-
             elif call.data[0] == 'g':
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=". . . ",reply_markup=None)
                 markup = types.InlineKeyboardMarkup(row_width=2)
 
                 group_id = call.data[:0] + call.data[0 + 1:]
@@ -139,31 +143,34 @@ def callback_inline(call):
                 button_10= types.InlineKeyboardButton('10', callback_data='1' + group_id)
                 button_20 = types.InlineKeyboardButton('20', callback_data='2' + group_id)
                 button_50 = types.InlineKeyboardButton('50', callback_data='5' + group_id)
-                button_100= types.InlineKeyboardButton('100', callback_data='0' + group_id)
+                # button_100= types.InlineKeyboardButton('100', callback_data='0' + group_id)
 
-                markup.add(button_10, button_20, button_50, button_100)
+                markup.add(button_10, button_20, button_50)     #, button_100)
                 bot.reply_to(call.message, text, reply_markup=markup)
 
             elif call.data[0] == '1':
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=". . . ", reply_markup=None)
                 group_id = call.data[:0] + call.data[0 + 1:]
                 display.get_group_feed(call, group_id)
 
             elif call.data[0] == '2':
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=". . . ", reply_markup=None)
                 group_id = call.data[:0] + call.data[0 + 1:]
                 display.get_group_feed(call, group_id, 20)
 
             elif call.data[0] == '5':
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=". . . ", reply_markup=None)
                 group_id = call.data[:0] + call.data[0 + 1:]
                 display.get_group_feed(call, group_id, 50)
 
-            elif call.data[0] == '0':
-                group_id = call.data[:0] + call.data[0 + 1:]
-                display.get_group_feed(call, group_id, 100)
+            # elif call.data[0] == '0':
+            #     group_id = call.data[:0] + call.data[0 + 1:]
+            #     display.get_group_feed(call, group_id, 100)
 
 
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=". . . ", reply_markup=None)
-    # except Exception:
-    #     print('buttons error')
+    except Exception:
+        print('buttons error')
 
 
 # Running
